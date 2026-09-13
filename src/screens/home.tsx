@@ -208,29 +208,51 @@ function CycleChart({
   average,
   periodLength,
   phaseLabel,
+  activePhase,
   periodEstimate,
+  todayLabel,
+  cycleDayLabel,
   labels,
 }: {
   day: number | null;
   average: number;
   periodLength: number;
   phaseLabel: string;
+  activePhase: ChartPhase | null;
   periodEstimate: string;
+  todayLabel: string;
+  cycleDayLabel: string;
   labels: Record<ChartPhase, string>;
 }) {
-  const size = 296;
+  const size = 312;
   const center = size / 2;
-  const ringRadius = 111;
+  const ringRadius = 102;
+  const labelRadius = 143;
   const segmentCount = Math.min(40, Math.max(21, Math.round(average)));
   const circumferencePerSegment = (2 * Math.PI * ringRadius) / segmentCount;
   const segmentWidth = Math.max(8, Math.min(16, circumferencePerSegment * 0.66));
-  const segmentHeight = 28;
+  const segmentHeight = 27;
   const currentDay = day ? Math.min(Math.max(day, 1), average) : null;
   const currentAngle = currentDay
     ? ((currentDay - 0.5) / average) * Math.PI * 2 - Math.PI / 2
     : -Math.PI / 2;
   const markerX = center + ringRadius * Math.cos(currentAngle) - 11;
   const markerY = center + ringRadius * Math.sin(currentAngle) - 11;
+  const markerLabelLeft = Math.min(size - 62, Math.max(2, markerX - 20));
+  const markerLabelTop = Math.min(size - 26, Math.max(2, markerY - 34));
+  const ovulationDay = Math.max(periodLength + 2, average - 14);
+  const phaseRanges: Record<ChartPhase, [number, number]> = {
+    menstrual: [1, Math.max(1, periodLength)],
+    follicular: [
+      Math.min(average, periodLength + 1),
+      Math.max(periodLength + 1, Math.min(average, ovulationDay - 2)),
+    ],
+    ovulatory: [
+      Math.max(1, ovulationDay - 1),
+      Math.min(average, ovulationDay + 1),
+    ],
+    luteal: [Math.min(average, ovulationDay + 2), average],
+  };
 
   return (
     <View style={{ alignItems: "center" }}>
@@ -257,9 +279,51 @@ function CycleChart({
                 height: segmentHeight,
                 borderRadius: segmentWidth / 2,
                 backgroundColor: phaseColors[phase],
+                opacity: activePhase === null || activePhase === phase ? 1 : 0.42,
                 transform: [{ rotate: `${angleDegrees}deg` }],
               }}
             />
+          );
+        })}
+
+        {(Object.keys(phaseRanges) as ChartPhase[]).map((phase) => {
+          const [start, end] = phaseRanges[phase];
+          const midDay = (start + end) / 2;
+          const angle = ((midDay - 0.5) / average) * Math.PI * 2 - Math.PI / 2;
+          const x = center + labelRadius * Math.cos(angle) - 42;
+          const y = center + labelRadius * Math.sin(angle) - 15;
+          const selected = activePhase === phase;
+          return (
+            <View
+              key={phase}
+              pointerEvents="none"
+              style={{
+                position: "absolute",
+                left: Math.min(size - 84, Math.max(0, x)),
+                top: Math.min(size - 30, Math.max(0, y)),
+                width: 84,
+                minHeight: 30,
+                paddingHorizontal: 5,
+                paddingVertical: 4,
+                borderRadius: 10,
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: selected ? "rgba(255,255,255,0.78)" : "transparent",
+              }}
+            >
+              <Copy
+                numberOfLines={2}
+                style={{
+                  color: selected ? c.plum : c.muted,
+                  fontSize: 10,
+                  lineHeight: 12,
+                  textAlign: "center",
+                  fontWeight: selected ? "800" : "600",
+                }}
+              >
+                {labels[phase]}
+              </Copy>
+            </View>
           );
         })}
 
@@ -267,40 +331,40 @@ function CycleChart({
           pointerEvents="none"
           style={{
             position: "absolute",
-            left: center - 91,
-            top: center - 91,
-            width: 182,
-            height: 182,
-            borderRadius: 91,
-            backgroundColor: "rgba(255,255,255,0.74)",
+            left: center - 88,
+            top: center - 88,
+            width: 176,
+            height: 176,
+            borderRadius: 88,
+            backgroundColor: "rgba(255,255,255,0.78)",
             borderWidth: 1,
-            borderColor: "rgba(255,255,255,0.92)",
+            borderColor: "rgba(255,255,255,0.94)",
             alignItems: "center",
             justifyContent: "center",
-            paddingHorizontal: 18,
+            paddingHorizontal: 17,
             ...shadows.card,
           }}
         >
-          <Copy style={{ color: c.muted, fontSize: 13, fontWeight: "700" }}>
-            Cycle Day
+          <Copy style={{ color: c.muted, fontSize: 12, fontWeight: "700" }}>
+            {cycleDayLabel}
           </Copy>
           <Copy
             style={{
               color: c.plum,
-              fontSize: 54,
-              lineHeight: 59,
+              fontSize: 52,
+              lineHeight: 56,
               fontWeight: "800",
               letterSpacing: -2,
             }}
           >
             {day ?? "—"}
           </Copy>
-          <Copy style={{ color: c.plum, fontSize: 16, fontWeight: "800" }}>
+          <Copy style={{ color: c.plum, fontSize: 15, fontWeight: "800" }}>
             {phaseLabel}
           </Copy>
           <View
             style={{
-              width: 32,
+              width: 30,
               height: 2,
               borderRadius: 1,
               backgroundColor: c.line,
@@ -310,8 +374,8 @@ function CycleChart({
           <Copy
             style={{
               color: c.muted,
-              fontSize: 12,
-              lineHeight: 16,
+              fontSize: 11,
+              lineHeight: 15,
               textAlign: "center",
             }}
           >
@@ -340,51 +404,23 @@ function CycleChart({
               pointerEvents="none"
               style={{
                 position: "absolute",
-                top: 6,
-                alignSelf: "center",
+                left: markerLabelLeft,
+                top: markerLabelTop,
+                minWidth: 58,
                 backgroundColor: c.surface,
                 borderRadius: radius.pill,
-                paddingHorizontal: 10,
-                paddingVertical: 5,
+                paddingHorizontal: 9,
+                paddingVertical: 4,
+                alignItems: "center",
                 ...shadows.card,
               }}
             >
-              <Copy style={{ color: c.plum, fontSize: 11, fontWeight: "800" }}>
-                Day {currentDay}
+              <Copy style={{ color: c.plum, fontSize: 10, fontWeight: "800" }}>
+                {todayLabel}
               </Copy>
             </View>
           </>
         )}
-      </View>
-
-      <View
-        style={{
-          flexDirection: "row",
-          flexWrap: "wrap",
-          justifyContent: "center",
-          columnGap: 14,
-          rowGap: 7,
-          marginTop: -2,
-        }}
-      >
-        {(Object.keys(phaseColors) as ChartPhase[]).map((phase) => (
-          <View
-            key={phase}
-            style={{ flexDirection: "row", alignItems: "center", gap: 5 }}
-          >
-            <View
-              style={{
-                width: 8,
-                height: 8,
-                borderRadius: 4,
-                backgroundColor: phaseColors[phase],
-              }}
-            />
-            <Copy style={{ color: c.muted, fontSize: 11, fontWeight: "600" }}>
-              {labels[phase]}
-            </Copy>
-          </View>
-        ))}
       </View>
     </View>
   );
@@ -408,6 +444,13 @@ export default function Home() {
     cycle.phase === "luteal"
       ? cycle.phase
       : "unknown";
+  const activePhase: ChartPhase | null =
+    cycle.phase === "menstrual" ||
+    cycle.phase === "follicular" ||
+    cycle.phase === "ovulatory" ||
+    cycle.phase === "luteal"
+      ? cycle.phase
+      : null;
   const insightKey =
     cycle.phase === "menstrual"
       ? "insightMenstrual"
@@ -424,6 +467,18 @@ export default function Home() {
       : cycle.remaining <= 0
         ? h.t("periodEstimateToday")
         : h.t("periodEstimate", { count: cycle.remaining });
+  const ovulationDay = Math.max(cycle.periodLength + 2, cycle.average - 14);
+  const daysToOvulation = cycle.day ? ovulationDay - cycle.day : null;
+  const nextMilestoneLabel =
+    daysToOvulation !== null && daysToOvulation > 0
+      ? h.t("ovulatory")
+      : h.t("nextPeriod");
+  const nextMilestoneValue =
+    daysToOvulation !== null && daysToOvulation > 0
+      ? h.t("countDays", { count: daysToOvulation })
+      : cycle.remaining !== null
+        ? h.t("countDays", { count: Math.max(0, cycle.remaining) })
+        : h.t("unknown");
   const openLog = (mood?: Mood) => {
     h.setEditingDate(now);
     router.push(mood ? { pathname: "/check-in", params: { mood } } : "/check-in");
@@ -536,7 +591,10 @@ export default function Home() {
             average={cycle.average}
             periodLength={cycle.periodLength}
             phaseLabel={h.t(phaseKey)}
+            activePhase={activePhase}
             periodEstimate={periodEstimate}
+            todayLabel={h.t("todayLabel")}
+            cycleDayLabel={h.t("cycleDay")}
             labels={{
               menstrual: h.t("menstrual"),
               follicular: h.t("follicular"),
@@ -545,7 +603,54 @@ export default function Home() {
             }}
           />
 
-          <View style={{ flexDirection: "row", gap: 9, marginTop: 14 }}>
+          <View
+            style={{
+              marginTop: 4,
+              marginHorizontal: 4,
+              minHeight: 54,
+              borderRadius: 18,
+              backgroundColor: "rgba(255,255,255,0.58)",
+              paddingHorizontal: 14,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 10,
+            }}
+          >
+            <View
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 16,
+                backgroundColor: "rgba(91,42,74,0.08)",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Ionicons name="arrow-forward" size={16} color={c.plum} />
+            </View>
+            <View style={{ flex: 1, gap: 1 }}>
+              <Copy style={{ color: c.muted, fontSize: 10, fontWeight: "700" }}>
+                {h.t("estimate")}
+              </Copy>
+              <Copy style={{ color: c.plum, fontSize: 13, fontWeight: "800" }}>
+                {nextMilestoneLabel}
+              </Copy>
+            </View>
+            <View
+              style={{
+                borderRadius: radius.pill,
+                backgroundColor: c.surface,
+                paddingHorizontal: 10,
+                paddingVertical: 6,
+              }}
+            >
+              <Copy style={{ color: c.plum, fontSize: 11, fontWeight: "800" }}>
+                {nextMilestoneValue}
+              </Copy>
+            </View>
+          </View>
+
+          <View style={{ flexDirection: "row", gap: 9, marginTop: 10 }}>
             <Pressable
               accessibilityRole="button"
               onPress={togglePeriod}
