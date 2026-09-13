@@ -105,17 +105,35 @@ export function Dock({
         accessibilityRole="button"
         accessibilityState={{ selected: focused }}
         onPress={() => navigation.navigate(name)}
-        style={{ flex: 1, alignItems: "center", gap: 4, paddingVertical: 8 }}
+        style={({ pressed }) => ({
+          flex: 1,
+          alignItems: "center",
+          gap: 3,
+          paddingVertical: 7,
+          opacity: pressed ? 0.65 : 1,
+        })}
       >
-        <Ionicons
-          name={(focused ? iconOn : icon) as keyof typeof Ionicons.glyphMap}
-          size={22}
-          color={focused ? c.plum : c.muted}
-        />
+        <View
+          style={{
+            minWidth: 40,
+            height: 32,
+            paddingHorizontal: 10,
+            borderRadius: 16,
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: focused ? c.blush : "transparent",
+          }}
+        >
+          <Ionicons
+            name={(focused ? iconOn : icon) as keyof typeof Ionicons.glyphMap}
+            size={21}
+            color={focused ? c.plum : c.muted}
+          />
+        </View>
         <Text
           style={{
-            fontSize: 11,
-            fontWeight: focused ? "600" : "500",
+            fontSize: 10.5,
+            fontWeight: focused ? "700" : "600",
             color: focused ? c.plum : c.muted,
           }}
         >
@@ -127,38 +145,45 @@ export function Dock({
   return (
     <View
       style={{
-        backgroundColor: c.surface,
-        paddingBottom: Math.max(insets.bottom - 4, 8),
-        paddingTop: 6,
-        borderTopWidth: 1,
-        borderTopColor: c.line,
+        backgroundColor: c.background,
+        paddingHorizontal: 14,
+        paddingTop: 9,
+        paddingBottom: Math.max(insets.bottom, 8) + 4,
       }}
     >
       <View
         style={{
+          minHeight: 70,
+          borderRadius: 26,
+          backgroundColor: c.surface,
           flexDirection: "row",
           alignItems: "flex-end",
-          paddingHorizontal: 10,
+          paddingHorizontal: 6,
+          paddingTop: 4,
+          paddingBottom: 3,
+          ...shadows.float,
         }}
       >
         {left.map((t) => item(t.name, t.icon, t.iconOn))}
-        <View style={{ width: 74, alignItems: "center", marginTop: -22 }}>
+        <View style={{ width: 76, alignItems: "center", marginTop: -23 }}>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Log today"
             onPress={() => router.push("/check-in")}
             style={({ pressed }) => ({
-              width: 62,
-              height: 62,
-              borderRadius: 31,
+              width: 64,
+              height: 64,
+              borderRadius: 32,
               backgroundColor: c.accent,
+              borderWidth: 5,
+              borderColor: c.surface,
               alignItems: "center",
               justifyContent: "center",
-              transform: [{ scale: pressed ? 0.96 : 1 }],
+              transform: [{ scale: pressed ? 0.95 : 1 }],
               ...shadows.float,
             })}
           >
-            <Ionicons name="add" size={32} color="white" />
+            <Ionicons name="add" size={30} color="white" />
           </Pressable>
         </View>
         {right.map((t) => item(t.name, t.icon, t.iconOn))}

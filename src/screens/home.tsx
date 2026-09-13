@@ -1,15 +1,16 @@
 import { useState } from "react";
 import { Pressable, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHealth } from "../hooks/use-health";
 import { calculateCycle } from "../services/cycle";
 import { today } from "../utils/dates";
-import { Copy, Message, Page } from "../components/ui";
+import { Art, Copy, Message, Page } from "../components/ui";
 import { Brand } from "../components/chrome";
 import { Face } from "../components/faces";
-import { colors as c, radius } from "../theme";
+import { colors as c, radius, shadows } from "../theme";
 import { Mood } from "../types";
 
 const moods: Mood[] = ["happy", "calm", "tired", "irritable"];
@@ -27,8 +28,8 @@ function HomeHeader() {
     <View
       style={{
         paddingTop: Math.max(insets.top, 12),
-        paddingHorizontal: 20,
-        paddingBottom: 10,
+        paddingHorizontal: 22,
+        paddingBottom: 8,
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
@@ -47,13 +48,14 @@ function HomeHeader() {
           borderRadius: 21,
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: c.surface,
+          backgroundColor: c.blush,
           borderWidth: 1,
           borderColor: c.line,
-          opacity: pressed ? 0.65 : 1,
+          opacity: pressed ? 0.7 : 1,
+          transform: [{ scale: pressed ? 0.96 : 1 }],
         })}
       >
-        <Ionicons name="person-outline" size={21} color={c.plum} />
+        <Ionicons name="person" size={18} color={c.plum} />
       </Pressable>
     </View>
   );
@@ -77,7 +79,9 @@ function SectionHeader({
         gap: 12,
       }}
     >
-      <Copy kind="heading">{title}</Copy>
+      <Copy kind="heading" style={{ fontSize: 19 }}>
+        {title}
+      </Copy>
       <Pressable
         accessibilityRole="button"
         onPress={onPress}
@@ -90,10 +94,10 @@ function SectionHeader({
           paddingVertical: 4,
         })}
       >
-        <Copy style={{ color: c.muted, fontSize: 14, fontWeight: "600" }}>
+        <Copy style={{ color: c.muted, fontSize: 13, fontWeight: "700" }}>
           {action}
         </Copy>
-        <Ionicons name="chevron-forward" size={16} color={c.muted} />
+        <Ionicons name="chevron-forward" size={15} color={c.muted} />
       </Pressable>
     </View>
   );
@@ -122,39 +126,58 @@ function QuickLogCard({
       style={({ pressed }) => ({
         flex: 1,
         minWidth: 0,
-        minHeight: 116,
-        borderRadius: radius.md,
-        padding: 13,
+        minHeight: 132,
+        borderRadius: 22,
+        padding: 14,
         justifyContent: "space-between",
         backgroundColor: tint,
-        borderWidth: 1,
-        borderColor: c.line,
-        opacity: pressed ? 0.7 : 1,
-        transform: [{ scale: pressed ? 0.98 : 1 }],
+        opacity: pressed ? 0.78 : 1,
+        transform: [{ scale: pressed ? 0.975 : 1 }],
+        ...shadows.card,
       })}
     >
       <View
         style={{
-          width: 38,
-          height: 38,
-          borderRadius: 19,
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: iconTint,
+          flexDirection: "row",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
         }}
       >
-        <Ionicons name={icon} size={19} color={c.plum} />
+        <View
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: 14,
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: iconTint,
+          }}
+        >
+          <Ionicons name={icon} size={20} color={c.plum} />
+        </View>
+        <View
+          style={{
+            width: 24,
+            height: 24,
+            borderRadius: 12,
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: "rgba(255,255,255,0.72)",
+          }}
+        >
+          <Ionicons name="add" size={15} color={c.plum} />
+        </View>
       </View>
-      <View style={{ gap: 1 }}>
+      <View style={{ gap: 2 }}>
         <Copy
           numberOfLines={1}
-          style={{ fontSize: 14, lineHeight: 19, fontWeight: "700" }}
+          style={{ fontSize: 14, lineHeight: 19, fontWeight: "800", color: c.plum }}
         >
           {title}
         </Copy>
         <Copy
-          numberOfLines={1}
-          style={{ color: c.muted, fontSize: 12, lineHeight: 17 }}
+          numberOfLines={2}
+          style={{ color: c.muted, fontSize: 12, lineHeight: 16 }}
         >
           {value}
         </Copy>
@@ -194,6 +217,14 @@ export default function Home() {
           : cycle.phase === "luteal"
             ? "insightLuteal"
             : "insightUnknown";
+  const cycleArt =
+    cycle.phase === "menstrual"
+      ? "period"
+      : cycle.phase === "ovulatory"
+        ? "ovulation"
+        : cycle.phase === "follicular"
+          ? "fertile"
+          : "heart";
   const periodEstimate =
     cycle.remaining === null
       ? h.t("periodEstimateUnknown")
@@ -209,14 +240,14 @@ export default function Home() {
     <View style={{ flex: 1, backgroundColor: c.background }}>
       <HomeHeader />
       <Page backgroundColor={c.background}>
-        <View style={{ gap: 3, paddingTop: 4 }}>
+        <View style={{ gap: 4, paddingTop: 2, paddingBottom: 2 }}>
           <Copy
             kind="heading"
-            style={{ fontSize: 28, lineHeight: 34, letterSpacing: -0.5 }}
+            style={{ fontSize: 30, lineHeight: 36, letterSpacing: -0.7, color: c.plum }}
           >
             {h.t(greetingKey)}
           </Copy>
-          <Copy style={{ color: c.muted, fontSize: 15 }}>
+          <Copy style={{ color: c.muted, fontSize: 14 }}>
             {new Date(`${now}T12:00:00`).toLocaleDateString(
               h.settings.language === "sw" ? "sw-KE" : "en-KE",
               { weekday: "long", day: "numeric", month: "long" },
@@ -224,16 +255,43 @@ export default function Home() {
           </Copy>
         </View>
 
-        <View
+        <LinearGradient
+          colors={["#F8C7D5", "#FCE5EB"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
           style={{
-            borderRadius: radius.lg,
+            borderRadius: 30,
+            overflow: "hidden",
+            minHeight: 292,
             padding: 20,
-            gap: 6,
-            backgroundColor: c.blush,
-            borderWidth: 1,
-            borderColor: c.line,
+            ...shadows.float,
           }}
         >
+          <View
+            pointerEvents="none"
+            style={{
+              position: "absolute",
+              width: 210,
+              height: 210,
+              borderRadius: 105,
+              backgroundColor: "rgba(255,255,255,0.24)",
+              right: -58,
+              top: -44,
+            }}
+          />
+          <View
+            pointerEvents="none"
+            style={{
+              position: "absolute",
+              width: 112,
+              height: 112,
+              borderRadius: 56,
+              backgroundColor: "rgba(255,255,255,0.18)",
+              left: -36,
+              bottom: 54,
+            }}
+          />
+
           <View
             style={{
               flexDirection: "row",
@@ -242,39 +300,85 @@ export default function Home() {
               gap: 12,
             }}
           >
-            <Copy kind="eyebrow" style={{ color: c.title, textTransform: "uppercase" }}>
-              {h.t("yourCycle")}
-            </Copy>
             <View
               style={{
                 borderRadius: radius.pill,
-                backgroundColor: c.surface,
+                backgroundColor: "rgba(255,255,255,0.62)",
                 paddingHorizontal: 11,
-                paddingVertical: 5,
+                paddingVertical: 6,
               }}
             >
-              <Copy style={{ color: c.plum, fontSize: 13, fontWeight: "600" }}>
-                {h.t("cycleProgress", {
-                  day: cycle.day ?? "—",
-                  total: cycle.average,
-                })}
+              <Copy
+                kind="eyebrow"
+                style={{ color: c.plum, textTransform: "uppercase", letterSpacing: 0.8 }}
+              >
+                {h.t("yourCycle")}
               </Copy>
             </View>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={h.t("cycleDetails")}
+              onPress={() => router.push("/cycle")}
+              hitSlop={6}
+              style={({ pressed }) => ({
+                width: 34,
+                height: 34,
+                borderRadius: 17,
+                backgroundColor: "rgba(255,255,255,0.72)",
+                alignItems: "center",
+                justifyContent: "center",
+                opacity: pressed ? 0.65 : 1,
+              })}
+            >
+              <Ionicons name="arrow-forward" size={17} color={c.plum} />
+            </Pressable>
           </View>
-          <Copy
-            kind="heading"
-            style={{ color: c.plum, fontSize: 30, lineHeight: 36, marginTop: 4 }}
+
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              minHeight: 124,
+              marginTop: 8,
+            }}
           >
-            {cycle.day ? h.t("dayLabel", { count: cycle.day }) : h.t("cycleDay")}
-          </Copy>
-          <Copy style={{ color: c.ink, fontSize: 16, fontWeight: "600" }}>
-            {h.t(phaseKey)}
-          </Copy>
-          <Copy style={{ color: c.muted, fontSize: 14 }}>{periodEstimate}</Copy>
-          <View style={{ paddingTop: 14, gap: 8 }}>
+            <View style={{ flex: 1, gap: 2, zIndex: 2 }}>
+              <Copy
+                style={{
+                  color: c.plum,
+                  fontSize: 46,
+                  lineHeight: 50,
+                  fontWeight: "800",
+                  letterSpacing: -1.7,
+                }}
+              >
+                {cycle.day ? h.t("dayLabel", { count: cycle.day }) : h.t("cycleDay")}
+              </Copy>
+              <Copy style={{ color: c.ink, fontSize: 17, fontWeight: "800" }}>
+                {h.t(phaseKey)}
+              </Copy>
+              <Copy style={{ color: c.muted, fontSize: 13, marginTop: 2 }}>
+                {periodEstimate}
+              </Copy>
+            </View>
+            <View
+              pointerEvents="none"
+              style={{
+                width: 118,
+                height: 118,
+                alignItems: "center",
+                justifyContent: "center",
+                marginRight: -4,
+              }}
+            >
+              <Art name={cycleArt} size={112} />
+            </View>
+          </View>
+
+          <View style={{ gap: 8, marginTop: 2 }}>
             <View
               style={{
-                height: 7,
+                height: 8,
                 borderRadius: 4,
                 backgroundColor: "rgba(91,42,74,0.10)",
                 overflow: "hidden",
@@ -282,20 +386,14 @@ export default function Home() {
             >
               <View
                 style={{
-                  width: `${progress * 100}%`,
-                  height: 7,
+                  width: `${Math.max(progress * 100, cycle.day ? 3 : 0)}%`,
+                  height: 8,
                   borderRadius: 4,
-                  backgroundColor: c.accent,
+                  backgroundColor: c.plum,
                 }}
               />
             </View>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
+            <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
               <Copy kind="small" style={{ color: c.muted }}>
                 {h.t("menstrual")}
               </Copy>
@@ -307,62 +405,61 @@ export default function Home() {
               </Copy>
             </View>
           </View>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => {
-              void (async () => {
-                setPeriodMessage("");
-                if (!ongoingPeriod) {
-                  h.setEditingPeriod(null);
-                  router.push({ pathname: "/period", params: { date: now } });
-                  return;
-                }
-                try {
-                  await h.savePeriod({ ...ongoingPeriod, end: now });
-                  setPeriodMessage(h.t("periodSaved"));
-                } catch {
-                  setPeriodMessage(h.t("error"));
-                }
-              })();
-            }}
-            style={({ pressed }) => ({
-              minHeight: 44,
-              borderRadius: radius.sm,
-              borderCurve: "continuous",
-              backgroundColor: c.surface,
-              paddingHorizontal: 13,
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 9,
-              opacity: pressed ? 0.7 : 1,
-              marginTop: 8,
-            })}
-          >
-            <Ionicons name="water-outline" size={18} color={c.accent} />
-            <Copy style={{ flex: 1, color: c.plum, fontWeight: "700", fontSize: 14 }}>
-              {h.t(ongoingPeriod ? "endPeriod" : "startPeriod")}
-            </Copy>
-            <Ionicons name="chevron-forward" size={16} color={c.muted} />
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => router.push("/cycle")}
-            hitSlop={6}
-            style={({ pressed }) => ({
-              alignSelf: "flex-start",
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 2,
-              opacity: pressed ? 0.55 : 1,
-              paddingTop: 4,
-            })}
-          >
-            <Copy style={{ color: c.muted, fontSize: 13, fontWeight: "600" }}>
-              {h.t("cycleDetails")}
-            </Copy>
-            <Ionicons name="chevron-forward" size={15} color={c.muted} />
-          </Pressable>
-        </View>
+
+          <View style={{ flexDirection: "row", gap: 9, marginTop: 14 }}>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => {
+                void (async () => {
+                  setPeriodMessage("");
+                  if (!ongoingPeriod) {
+                    h.setEditingPeriod(null);
+                    router.push({ pathname: "/period", params: { date: now } });
+                    return;
+                  }
+                  try {
+                    await h.savePeriod({ ...ongoingPeriod, end: now });
+                    setPeriodMessage(h.t("periodSaved"));
+                  } catch {
+                    setPeriodMessage(h.t("error"));
+                  }
+                })();
+              }}
+              style={({ pressed }) => ({
+                flex: 1,
+                minHeight: 46,
+                borderRadius: 15,
+                backgroundColor: c.plum,
+                paddingHorizontal: 13,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                opacity: pressed ? 0.82 : 1,
+                transform: [{ scale: pressed ? 0.985 : 1 }],
+              })}
+            >
+              <Ionicons name="water" size={17} color={c.surface} />
+              <Copy style={{ color: c.surface, fontWeight: "800", fontSize: 13 }}>
+                {h.t(ongoingPeriod ? "endPeriod" : "startPeriod")}
+              </Copy>
+            </Pressable>
+            <View
+              style={{
+                minHeight: 46,
+                borderRadius: 15,
+                backgroundColor: "rgba(255,255,255,0.66)",
+                paddingHorizontal: 13,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Copy style={{ color: c.plum, fontSize: 12, fontWeight: "800" }}>
+                {h.t("cycleProgress", { day: cycle.day ?? "—", total: cycle.average })}
+              </Copy>
+            </View>
+          </View>
+        </LinearGradient>
 
         <Message
           text={periodMessage}
@@ -372,11 +469,10 @@ export default function Home() {
         <View
           style={{
             backgroundColor: c.surface,
-            borderRadius: radius.lg,
+            borderRadius: 26,
             padding: 18,
-            gap: 17,
-            borderWidth: 1,
-            borderColor: c.line,
+            gap: 18,
+            ...shadows.card,
           }}
         >
           <View
@@ -387,9 +483,11 @@ export default function Home() {
               gap: 12,
             }}
           >
-            <View style={{ flex: 1, gap: 2 }}>
-              <Copy kind="heading">{h.t("howFeel")}</Copy>
-              <Copy style={{ color: c.muted, fontSize: 14 }}>{h.t("trackMood")}</Copy>
+            <View style={{ flex: 1, gap: 3 }}>
+              <Copy kind="heading" style={{ fontSize: 19 }}>
+                {h.t("howFeel")}
+              </Copy>
+              <Copy style={{ color: c.muted, fontSize: 13 }}>{h.t("trackMood")}</Copy>
             </View>
             <Pressable
               accessibilityRole="button"
@@ -397,16 +495,16 @@ export default function Home() {
               onPress={() => openLog()}
               hitSlop={6}
               style={({ pressed }) => ({
-                width: 38,
-                height: 38,
-                borderRadius: 19,
+                width: 36,
+                height: 36,
+                borderRadius: 18,
                 backgroundColor: c.lavender,
                 alignItems: "center",
                 justifyContent: "center",
                 opacity: pressed ? 0.65 : 1,
               })}
             >
-              <Ionicons name="add" size={21} color={c.plum} />
+              <Ionicons name="add" size={20} color={c.plum} />
             </Pressable>
           </View>
           <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
@@ -423,19 +521,24 @@ export default function Home() {
                     width: "24%",
                     minWidth: 0,
                     alignItems: "center",
-                    gap: 6,
+                    gap: 7,
                     opacity: pressed ? 0.65 : 1,
+                    transform: [{ translateY: selected ? -2 : 0 }],
                   })}
                 >
                   <View
                     style={{
-                      padding: 3,
-                      borderRadius: radius.pill,
-                      borderWidth: 2,
-                      borderColor: selected ? c.accent : "transparent",
+                      width: 64,
+                      height: 64,
+                      borderRadius: 22,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      backgroundColor: selected ? c.blush : c.mist,
+                      borderWidth: selected ? 2 : 1,
+                      borderColor: selected ? c.accent : c.line,
                     }}
                   >
-                    <Face mood={mood} size={54} />
+                    <Face mood={mood} size={49} />
                     {selected && (
                       <View
                         style={{
@@ -459,7 +562,7 @@ export default function Home() {
                   <Copy
                     numberOfLines={1}
                     style={{
-                      fontWeight: selected ? "700" : "500",
+                      fontWeight: selected ? "800" : "600",
                       fontSize: 12,
                       lineHeight: 17,
                       color: selected ? c.plum : c.muted,
@@ -477,52 +580,56 @@ export default function Home() {
           accessibilityRole="button"
           onPress={() => openLog()}
           style={({ pressed }) => ({
-            minHeight: 54,
-            borderRadius: radius.md,
-            backgroundColor: log ? c.sage : c.surface,
-            borderWidth: 1,
-            borderColor: log ? "#CFE7D7" : c.line,
-            paddingHorizontal: 15,
+            minHeight: 58,
+            borderRadius: 19,
+            backgroundColor: log ? c.sage : c.plum,
+            paddingHorizontal: 16,
             flexDirection: "row",
             alignItems: "center",
-            gap: 10,
-            opacity: pressed ? 0.7 : 1,
+            gap: 11,
+            opacity: pressed ? 0.82 : 1,
+            transform: [{ scale: pressed ? 0.99 : 1 }],
+            ...shadows.card,
           })}
         >
           <View
             style={{
-              width: 28,
-              height: 28,
-              borderRadius: 14,
-              backgroundColor: log ? c.green : c.accent,
+              width: 32,
+              height: 32,
+              borderRadius: 16,
+              backgroundColor: log ? c.green : "rgba(255,255,255,0.16)",
               alignItems: "center",
               justifyContent: "center",
             }}
           >
-            <Ionicons name={log ? "checkmark" : "add"} size={17} color={c.surface} />
+            <Ionicons name={log ? "checkmark" : "add"} size={18} color={c.surface} />
           </View>
           <Copy
             style={{
               flex: 1,
-              color: log ? c.green : c.plum,
+              color: log ? c.green : c.surface,
               fontSize: 14,
-              fontWeight: "600",
+              fontWeight: "800",
             }}
           >
             {h.t(log ? "checkInSaved" : "completeCheckIn")}
           </Copy>
-          <Ionicons name="chevron-forward" size={18} color={c.muted} />
+          <Ionicons
+            name="arrow-forward"
+            size={18}
+            color={log ? c.green : c.surface}
+          />
         </Pressable>
 
-        <View style={{ gap: 11 }}>
+        <View style={{ gap: 12 }}>
           <SectionHeader
             title={h.t("quickLog")}
             action={h.t("viewAll")}
             onPress={() => openLog()}
           />
-          <View style={{ flexDirection: "row", gap: 9 }}>
+          <View style={{ flexDirection: "row", gap: 10 }}>
             <QuickLogCard
-              icon="flash-outline"
+              icon="sparkles-outline"
               title={h.t("symptoms")}
               value={
                 log
@@ -534,7 +641,7 @@ export default function Home() {
               onPress={() => openLog()}
             />
             <QuickLogCard
-              icon="bar-chart-outline"
+              icon="flash-outline"
               title={h.t("energy")}
               value={log ? h.t(energyLabels[log.energy - 1]) : h.t("notRecorded")}
               tint={c.peachSoft}
@@ -552,7 +659,7 @@ export default function Home() {
           </View>
         </View>
 
-        <View style={{ gap: 11 }}>
+        <View style={{ gap: 12 }}>
           <SectionHeader
             title={h.t("todayInsight")}
             action={h.t("seeMore")}
@@ -562,34 +669,39 @@ export default function Home() {
             accessibilityRole="button"
             onPress={() => router.push("/(tabs)/insights")}
             style={({ pressed }) => ({
-              minHeight: 94,
-              borderRadius: radius.md,
-              backgroundColor: c.surface,
-              borderWidth: 1,
-              borderColor: c.line,
-              padding: 16,
+              minHeight: 116,
+              borderRadius: 24,
+              backgroundColor: c.peachSoft,
+              padding: 17,
               flexDirection: "row",
               alignItems: "center",
               gap: 13,
-              opacity: pressed ? 0.7 : 1,
+              opacity: pressed ? 0.78 : 1,
+              transform: [{ scale: pressed ? 0.985 : 1 }],
+              ...shadows.card,
             })}
           >
             <View
               style={{
-                width: 42,
-                height: 42,
-                borderRadius: 21,
-                backgroundColor: c.peach,
+                width: 72,
+                height: 72,
+                borderRadius: 24,
+                backgroundColor: "rgba(255,255,255,0.62)",
                 alignItems: "center",
                 justifyContent: "center",
               }}
             >
-              <Ionicons name="bulb-outline" size={22} color={c.plum} />
+              <Art name="cloud" size={64} />
             </View>
-            <Copy style={{ flex: 1, color: c.muted, fontSize: 14, lineHeight: 20 }}>
-              {h.t(insightKey)}
-            </Copy>
-            <Ionicons name="chevron-forward" size={19} color={c.muted} />
+            <View style={{ flex: 1, gap: 4 }}>
+              <Copy style={{ color: c.plum, fontSize: 13, fontWeight: "800" }}>
+                {h.t(phaseKey)}
+              </Copy>
+              <Copy style={{ color: c.ink, fontSize: 13, lineHeight: 19 }}>
+                {h.t(insightKey)}
+              </Copy>
+            </View>
+            <Ionicons name="arrow-forward" size={18} color={c.plum} />
           </Pressable>
         </View>
 
