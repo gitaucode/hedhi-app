@@ -22,6 +22,23 @@ const energyLabels = [
   "energyHigh",
 ] as const;
 
+const phaseColors = {
+  menstrual: "#E96D94",
+  follicular: "#F3AEC4",
+  ovulatory: "#CDB9EA",
+  luteal: "#F2C5B5",
+} as const;
+
+type ChartPhase = keyof typeof phaseColors;
+
+function chartPhase(day: number, average: number, periodLength: number): ChartPhase {
+  const ovulationDay = Math.max(periodLength + 2, average - 14);
+  if (day <= periodLength) return "menstrual";
+  if (day < ovulationDay - 1) return "follicular";
+  if (day <= ovulationDay + 1) return "ovulatory";
+  return "luteal";
+}
+
 function HomeHeader() {
   const insets = useSafeAreaInsets();
   return (
@@ -186,6 +203,193 @@ function QuickLogCard({
   );
 }
 
+function CycleChart({
+  day,
+  average,
+  periodLength,
+  phaseLabel,
+  periodEstimate,
+  labels,
+}: {
+  day: number | null;
+  average: number;
+  periodLength: number;
+  phaseLabel: string;
+  periodEstimate: string;
+  labels: Record<ChartPhase, string>;
+}) {
+  const size = 296;
+  const center = size / 2;
+  const ringRadius = 111;
+  const segmentCount = Math.min(40, Math.max(21, Math.round(average)));
+  const circumferencePerSegment = (2 * Math.PI * ringRadius) / segmentCount;
+  const segmentWidth = Math.max(8, Math.min(16, circumferencePerSegment * 0.66));
+  const segmentHeight = 28;
+  const currentDay = day ? Math.min(Math.max(day, 1), average) : null;
+  const currentAngle = currentDay
+    ? ((currentDay - 0.5) / average) * Math.PI * 2 - Math.PI / 2
+    : -Math.PI / 2;
+  const markerX = center + ringRadius * Math.cos(currentAngle) - 11;
+  const markerY = center + ringRadius * Math.sin(currentAngle) - 11;
+
+  return (
+    <View style={{ alignItems: "center" }}>
+      <View style={{ width: size, height: size }}>
+        {Array.from({ length: segmentCount }, (_, index) => {
+          const representedDay = Math.min(
+            average,
+            Math.max(1, Math.round(((index + 0.5) / segmentCount) * average)),
+          );
+          const angle = (index / segmentCount) * Math.PI * 2 - Math.PI / 2;
+          const x = center + ringRadius * Math.cos(angle) - segmentWidth / 2;
+          const y = center + ringRadius * Math.sin(angle) - segmentHeight / 2;
+          const phase = chartPhase(representedDay, average, periodLength);
+          const angleDegrees = (angle * 180) / Math.PI + 90;
+          return (
+            <View
+              key={index}
+              pointerEvents="none"
+              style={{
+                position: "absolute",
+                left: x,
+                top: y,
+                width: segmentWidth,
+                height: segmentHeight,
+                borderRadius: segmentWidth / 2,
+                backgroundColor: phaseColors[phase],
+                transform: [{ rotate: `${angleDegrees}deg` }],
+              }}
+            />
+          );
+        })}
+
+        <View
+          pointerEvents="none"
+          style={{
+            position: "absolute",
+            left: center - 91,
+            top: center - 91,
+            width: 182,
+            height: 182,
+            borderRadius: 91,
+            backgroundColor: "rgba(255,255,255,0.74)",
+            borderWidth: 1,
+            borderColor: "rgba(255,255,255,0.92)",
+            alignItems: "center",
+            justifyContent: "center",
+            paddingHorizontal: 18,
+            ...shadows.card,
+          }}
+        >
+          <Copy style={{ color: c.muted, fontSize: 13, fontWeight: "700" }}>
+            Cycle Day
+          </Copy>
+          <Copy
+            style={{
+              color: c.plum,
+              fontSize: 54,
+              lineHeight: 59,
+              fontWeight: "800",
+              letterSpacing: -2,
+            }}
+          >
+            {day ?? "—"}
+          </Copy>
+          <Copy style={{ color: c.plum, fontSize: 16, fontWeight: "800" }}>
+            {phaseLabel}
+          </Copy>
+          <View
+            style={{
+              width: 32,
+              height: 2,
+              borderRadius: 1,
+              backgroundColor: c.line,
+              marginVertical: 7,
+            }}
+          />
+          <Copy
+            style={{
+              color: c.muted,
+              fontSize: 12,
+              lineHeight: 16,
+              textAlign: "center",
+            }}
+          >
+            {periodEstimate}
+          </Copy>
+        </View>
+
+        {currentDay && (
+          <>
+            <View
+              pointerEvents="none"
+              style={{
+                position: "absolute",
+                left: markerX,
+                top: markerY,
+                width: 22,
+                height: 22,
+                borderRadius: 11,
+                backgroundColor: c.accent,
+                borderWidth: 4,
+                borderColor: c.surface,
+                ...shadows.float,
+              }}
+            />
+            <View
+              pointerEvents="none"
+              style={{
+                position: "absolute",
+                top: 6,
+                alignSelf: "center",
+                backgroundColor: c.surface,
+                borderRadius: radius.pill,
+                paddingHorizontal: 10,
+                paddingVertical: 5,
+                ...shadows.card,
+              }}
+            >
+              <Copy style={{ color: c.plum, fontSize: 11, fontWeight: "800" }}>
+                Day {currentDay}
+              </Copy>
+            </View>
+          </>
+        )}
+      </View>
+
+      <View
+        style={{
+          flexDirection: "row",
+          flexWrap: "wrap",
+          justifyContent: "center",
+          columnGap: 14,
+          rowGap: 7,
+          marginTop: -2,
+        }}
+      >
+        {(Object.keys(phaseColors) as ChartPhase[]).map((phase) => (
+          <View
+            key={phase}
+            style={{ flexDirection: "row", alignItems: "center", gap: 5 }}
+          >
+            <View
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: 4,
+                backgroundColor: phaseColors[phase],
+              }}
+            />
+            <Copy style={{ color: c.muted, fontSize: 11, fontWeight: "600" }}>
+              {labels[phase]}
+            </Copy>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
 export default function Home() {
   const h = useHealth();
   const [periodMessage, setPeriodMessage] = useState("");
@@ -197,9 +401,6 @@ export default function Home() {
   const hour = new Date().getHours();
   const greetingKey =
     hour < 12 ? "goodMorning" : hour < 18 ? "goodAfternoon" : "goodEvening";
-  const progress = cycle.day
-    ? Math.min(1, Math.max(0, cycle.day / Math.max(cycle.average, 1)))
-    : 0;
   const phaseKey =
     cycle.phase === "menstrual" ||
     cycle.phase === "follicular" ||
@@ -217,14 +418,6 @@ export default function Home() {
           : cycle.phase === "luteal"
             ? "insightLuteal"
             : "insightUnknown";
-  const cycleArt =
-    cycle.phase === "menstrual"
-      ? "period"
-      : cycle.phase === "ovulatory"
-        ? "ovulation"
-        : cycle.phase === "follicular"
-          ? "fertile"
-          : "heart";
   const periodEstimate =
     cycle.remaining === null
       ? h.t("periodEstimateUnknown")
@@ -234,6 +427,22 @@ export default function Home() {
   const openLog = (mood?: Mood) => {
     h.setEditingDate(now);
     router.push(mood ? { pathname: "/check-in", params: { mood } } : "/check-in");
+  };
+  const togglePeriod = () => {
+    void (async () => {
+      setPeriodMessage("");
+      if (!ongoingPeriod) {
+        h.setEditingPeriod(null);
+        router.push({ pathname: "/period", params: { date: now } });
+        return;
+      }
+      try {
+        await h.savePeriod({ ...ongoingPeriod, end: now });
+        setPeriodMessage(h.t("periodSaved"));
+      } catch {
+        setPeriodMessage(h.t("error"));
+      }
+    })();
   };
 
   return (
@@ -256,14 +465,15 @@ export default function Home() {
         </View>
 
         <LinearGradient
-          colors={["#F8C7D5", "#FCE5EB"]}
+          colors={["#F8CCD8", "#FDE8EE"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={{
             borderRadius: 30,
             overflow: "hidden",
-            minHeight: 292,
-            padding: 20,
+            paddingHorizontal: 16,
+            paddingTop: 16,
+            paddingBottom: 18,
             ...shadows.float,
           }}
         >
@@ -271,40 +481,27 @@ export default function Home() {
             pointerEvents="none"
             style={{
               position: "absolute",
-              width: 210,
-              height: 210,
-              borderRadius: 105,
-              backgroundColor: "rgba(255,255,255,0.24)",
-              right: -58,
-              top: -44,
-            }}
-          />
-          <View
-            pointerEvents="none"
-            style={{
-              position: "absolute",
-              width: 112,
-              height: 112,
-              borderRadius: 56,
+              width: 230,
+              height: 230,
+              borderRadius: 115,
               backgroundColor: "rgba(255,255,255,0.18)",
-              left: -36,
-              bottom: 54,
+              right: -80,
+              top: -52,
             }}
           />
-
           <View
             style={{
               flexDirection: "row",
               alignItems: "center",
               justifyContent: "space-between",
-              gap: 12,
+              paddingHorizontal: 2,
             }}
           >
             <View
               style={{
                 borderRadius: radius.pill,
-                backgroundColor: "rgba(255,255,255,0.62)",
-                paddingHorizontal: 11,
+                backgroundColor: "rgba(255,255,255,0.66)",
+                paddingHorizontal: 12,
                 paddingVertical: 6,
               }}
             >
@@ -321,116 +518,43 @@ export default function Home() {
               onPress={() => router.push("/cycle")}
               hitSlop={6}
               style={({ pressed }) => ({
-                width: 34,
-                height: 34,
-                borderRadius: 17,
-                backgroundColor: "rgba(255,255,255,0.72)",
+                width: 36,
+                height: 36,
+                borderRadius: 18,
+                backgroundColor: "rgba(255,255,255,0.76)",
                 alignItems: "center",
                 justifyContent: "center",
                 opacity: pressed ? 0.65 : 1,
               })}
             >
-              <Ionicons name="arrow-forward" size={17} color={c.plum} />
+              <Ionicons name="arrow-forward" size={18} color={c.plum} />
             </Pressable>
           </View>
 
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              minHeight: 124,
-              marginTop: 8,
+          <CycleChart
+            day={cycle.day}
+            average={cycle.average}
+            periodLength={cycle.periodLength}
+            phaseLabel={h.t(phaseKey)}
+            periodEstimate={periodEstimate}
+            labels={{
+              menstrual: h.t("menstrual"),
+              follicular: h.t("follicular"),
+              ovulatory: h.t("ovulatory"),
+              luteal: h.t("luteal"),
             }}
-          >
-            <View style={{ flex: 1, gap: 2, zIndex: 2 }}>
-              <Copy
-                style={{
-                  color: c.plum,
-                  fontSize: 46,
-                  lineHeight: 50,
-                  fontWeight: "800",
-                  letterSpacing: -1.7,
-                }}
-              >
-                {cycle.day ? h.t("dayLabel", { count: cycle.day }) : h.t("cycleDay")}
-              </Copy>
-              <Copy style={{ color: c.ink, fontSize: 17, fontWeight: "800" }}>
-                {h.t(phaseKey)}
-              </Copy>
-              <Copy style={{ color: c.muted, fontSize: 13, marginTop: 2 }}>
-                {periodEstimate}
-              </Copy>
-            </View>
-            <View
-              pointerEvents="none"
-              style={{
-                width: 118,
-                height: 118,
-                alignItems: "center",
-                justifyContent: "center",
-                marginRight: -4,
-              }}
-            >
-              <Art name={cycleArt} size={112} />
-            </View>
-          </View>
-
-          <View style={{ gap: 8, marginTop: 2 }}>
-            <View
-              style={{
-                height: 8,
-                borderRadius: 4,
-                backgroundColor: "rgba(91,42,74,0.10)",
-                overflow: "hidden",
-              }}
-            >
-              <View
-                style={{
-                  width: `${Math.max(progress * 100, cycle.day ? 3 : 0)}%`,
-                  height: 8,
-                  borderRadius: 4,
-                  backgroundColor: c.plum,
-                }}
-              />
-            </View>
-            <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-              <Copy kind="small" style={{ color: c.muted }}>
-                {h.t("menstrual")}
-              </Copy>
-              <Copy kind="small" style={{ color: c.muted }}>
-                {h.t("ovulatory")}
-              </Copy>
-              <Copy kind="small" style={{ color: c.muted }}>
-                {h.t("nextPeriod")}
-              </Copy>
-            </View>
-          </View>
+          />
 
           <View style={{ flexDirection: "row", gap: 9, marginTop: 14 }}>
             <Pressable
               accessibilityRole="button"
-              onPress={() => {
-                void (async () => {
-                  setPeriodMessage("");
-                  if (!ongoingPeriod) {
-                    h.setEditingPeriod(null);
-                    router.push({ pathname: "/period", params: { date: now } });
-                    return;
-                  }
-                  try {
-                    await h.savePeriod({ ...ongoingPeriod, end: now });
-                    setPeriodMessage(h.t("periodSaved"));
-                  } catch {
-                    setPeriodMessage(h.t("error"));
-                  }
-                })();
-              }}
+              onPress={togglePeriod}
               style={({ pressed }) => ({
                 flex: 1,
-                minHeight: 46,
-                borderRadius: 15,
+                minHeight: 50,
+                borderRadius: 17,
                 backgroundColor: c.plum,
-                paddingHorizontal: 13,
+                paddingHorizontal: 14,
                 flexDirection: "row",
                 alignItems: "center",
                 justifyContent: "center",
@@ -439,17 +563,17 @@ export default function Home() {
                 transform: [{ scale: pressed ? 0.985 : 1 }],
               })}
             >
-              <Ionicons name="water" size={17} color={c.surface} />
-              <Copy style={{ color: c.surface, fontWeight: "800", fontSize: 13 }}>
+              <Ionicons name="water" size={18} color={c.surface} />
+              <Copy style={{ color: c.surface, fontWeight: "800", fontSize: 14 }}>
                 {h.t(ongoingPeriod ? "endPeriod" : "startPeriod")}
               </Copy>
             </Pressable>
             <View
               style={{
-                minHeight: 46,
-                borderRadius: 15,
-                backgroundColor: "rgba(255,255,255,0.66)",
-                paddingHorizontal: 13,
+                minHeight: 50,
+                borderRadius: 17,
+                backgroundColor: "rgba(255,255,255,0.72)",
+                paddingHorizontal: 14,
                 alignItems: "center",
                 justifyContent: "center",
               }}
