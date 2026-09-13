@@ -224,33 +224,50 @@ function CycleChart({
   cycleDayLabel: string;
   labels: Record<ChartPhase, string>;
 }) {
-  const size = 320;
+  const size = 304;
   const center = size / 2;
-  const ringRadius = 101;
+  const ringRadius = 85;
   const segmentCount = Math.min(40, Math.max(21, Math.round(average)));
   const circumferencePerSegment = (2 * Math.PI * ringRadius) / segmentCount;
-  const segmentWidth = Math.max(8, Math.min(16, circumferencePerSegment * 0.66));
-  const segmentHeight = 27;
+  const segmentWidth = Math.max(8, Math.min(15, circumferencePerSegment * 0.66));
+  const segmentHeight = 24;
   const currentDay = day ? Math.min(Math.max(day, 1), average) : null;
   const currentAngle = currentDay
     ? ((currentDay - 0.5) / average) * Math.PI * 2 - Math.PI / 2
     : -Math.PI / 2;
-  const markerX = center + ringRadius * Math.cos(currentAngle) - 11;
-  const markerY = center + ringRadius * Math.sin(currentAngle) - 11;
-  const markerOnRight = markerX > center;
-  const markerLabelLeft = markerOnRight
-    ? Math.min(size - 48, markerX + 18)
-    : Math.max(0, markerX - 46);
-  const markerLabelTop = Math.min(size - 18, Math.max(4, markerY + 2));
+  const markerX = center + ringRadius * Math.cos(currentAngle) - 10;
+  const markerY = center + ringRadius * Math.sin(currentAngle) - 10;
+  const todayLeft = Math.min(size - 42, markerX + 21);
+  const todayTop = Math.min(size - 18, Math.max(4, markerY + 3));
 
-  const phaseLabelLayout: Record<
+  const callouts: Record<
     ChartPhase,
-    { left: number; top: number; width: number; align: "left" | "center" | "right" }
+    {
+      label: { left: number; top: number; width: number; align: "left" | "center" | "right" };
+      line: { left: number; top: number; width: number; height: number };
+      dot: { left: number; top: number };
+    }
   > = {
-    menstrual: { left: 196, top: 42, width: 104, align: "left" },
-    follicular: { left: 226, top: 139, width: 88, align: "left" },
-    ovulatory: { left: 105, top: 286, width: 110, align: "center" },
-    luteal: { left: 6, top: 143, width: 92, align: "right" },
+    menstrual: {
+      label: { left: 235, top: 58, width: 66, align: "left" },
+      line: { left: 216, top: 82, width: 18, height: 1 },
+      dot: { left: 212, top: 80 },
+    },
+    follicular: {
+      label: { left: 239, top: 139, width: 63, align: "left" },
+      line: { left: 222, top: 159, width: 16, height: 1 },
+      dot: { left: 218, top: 157 },
+    },
+    ovulatory: {
+      label: { left: 105, top: 271, width: 94, align: "center" },
+      line: { left: 151, top: 244, width: 1, height: 22 },
+      dot: { left: 149, top: 240 },
+    },
+    luteal: {
+      label: { left: 2, top: 153, width: 65, align: "right" },
+      line: { left: 68, top: 171, width: 17, height: 1 },
+      dot: { left: 83, top: 169 },
+    },
   };
 
   return (
@@ -278,34 +295,51 @@ function CycleChart({
                 height: segmentHeight,
                 borderRadius: segmentWidth / 2,
                 backgroundColor: phaseColors[phase],
-                opacity: activePhase === null || activePhase === phase ? 1 : 0.52,
+                opacity: activePhase === null || activePhase === phase ? 1 : 0.68,
                 transform: [{ rotate: `${angleDegrees}deg` }],
               }}
             />
           );
         })}
 
-        {(Object.keys(phaseLabelLayout) as ChartPhase[]).map((phase) => {
-          const layout = phaseLabelLayout[phase];
+        {(Object.keys(callouts) as ChartPhase[]).map((phase) => {
+          const callout = callouts[phase];
           const selected = activePhase === phase;
           return (
-            <View
-              key={phase}
-              pointerEvents="none"
-              style={{
-                position: "absolute",
-                left: layout.left,
-                top: layout.top,
-                width: layout.width,
-              }}
-            >
+            <View key={phase} pointerEvents="none">
+              <View
+                style={{
+                  position: "absolute",
+                  left: callout.line.left,
+                  top: callout.line.top,
+                  width: callout.line.width,
+                  height: callout.line.height,
+                  backgroundColor: phaseColors[phase],
+                  opacity: selected ? 1 : 0.72,
+                }}
+              />
+              <View
+                style={{
+                  position: "absolute",
+                  left: callout.dot.left,
+                  top: callout.dot.top,
+                  width: 5,
+                  height: 5,
+                  borderRadius: 3,
+                  backgroundColor: phaseColors[phase],
+                }}
+              />
               <Copy
                 numberOfLines={2}
                 style={{
+                  position: "absolute",
+                  left: callout.label.left,
+                  top: callout.label.top,
+                  width: callout.label.width,
                   color: selected ? c.plum : c.muted,
-                  fontSize: selected ? 11 : 10,
-                  lineHeight: 13,
-                  textAlign: layout.align,
+                  fontSize: selected ? 10.5 : 10,
+                  lineHeight: 12,
+                  textAlign: callout.label.align,
                   fontWeight: selected ? "800" : "600",
                 }}
               >
@@ -319,51 +353,55 @@ function CycleChart({
           pointerEvents="none"
           style={{
             position: "absolute",
-            left: center - 88,
-            top: center - 88,
-            width: 176,
-            height: 176,
-            borderRadius: 88,
-            backgroundColor: "rgba(255,255,255,0.78)",
+            left: center - 65,
+            top: center - 65,
+            width: 130,
+            height: 130,
+            borderRadius: 65,
+            backgroundColor: "rgba(255,255,255,0.80)",
             borderWidth: 1,
-            borderColor: "rgba(255,255,255,0.94)",
+            borderColor: "rgba(255,255,255,0.95)",
             alignItems: "center",
             justifyContent: "center",
-            paddingHorizontal: 17,
+            paddingHorizontal: 13,
             ...shadows.card,
           }}
         >
-          <Copy style={{ color: c.muted, fontSize: 12, fontWeight: "700" }}>
+          <Copy style={{ color: c.muted, fontSize: 11, fontWeight: "700" }}>
             {cycleDayLabel}
           </Copy>
           <Copy
             style={{
               color: c.plum,
-              fontSize: 52,
-              lineHeight: 56,
+              fontSize: 45,
+              lineHeight: 48,
               fontWeight: "800",
-              letterSpacing: -2,
+              letterSpacing: -1.8,
             }}
           >
             {day ?? "—"}
           </Copy>
-          <Copy style={{ color: c.plum, fontSize: 15, fontWeight: "800" }}>
+          <Copy
+            numberOfLines={1}
+            style={{ color: c.plum, fontSize: 13, fontWeight: "800" }}
+          >
             {phaseLabel}
           </Copy>
           <View
             style={{
-              width: 30,
+              width: 26,
               height: 2,
               borderRadius: 1,
               backgroundColor: c.line,
-              marginVertical: 7,
+              marginVertical: 5,
             }}
           />
           <Copy
+            numberOfLines={2}
             style={{
               color: c.muted,
-              fontSize: 11,
-              lineHeight: 15,
+              fontSize: 10,
+              lineHeight: 13,
               textAlign: "center",
             }}
           >
@@ -379,9 +417,9 @@ function CycleChart({
                 position: "absolute",
                 left: markerX,
                 top: markerY,
-                width: 22,
-                height: 22,
-                borderRadius: 11,
+                width: 20,
+                height: 20,
+                borderRadius: 10,
                 backgroundColor: c.accent,
                 borderWidth: 4,
                 borderColor: c.surface,
@@ -392,8 +430,8 @@ function CycleChart({
               pointerEvents="none"
               style={{
                 position: "absolute",
-                left: markerLabelLeft,
-                top: markerLabelTop,
+                left: todayLeft,
+                top: todayTop,
                 color: c.plum,
                 fontSize: 10,
                 lineHeight: 13,
