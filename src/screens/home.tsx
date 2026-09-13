@@ -224,10 +224,9 @@ function CycleChart({
   cycleDayLabel: string;
   labels: Record<ChartPhase, string>;
 }) {
-  const size = 312;
+  const size = 320;
   const center = size / 2;
-  const ringRadius = 102;
-  const labelRadius = 143;
+  const ringRadius = 101;
   const segmentCount = Math.min(40, Math.max(21, Math.round(average)));
   const circumferencePerSegment = (2 * Math.PI * ringRadius) / segmentCount;
   const segmentWidth = Math.max(8, Math.min(16, circumferencePerSegment * 0.66));
@@ -238,20 +237,20 @@ function CycleChart({
     : -Math.PI / 2;
   const markerX = center + ringRadius * Math.cos(currentAngle) - 11;
   const markerY = center + ringRadius * Math.sin(currentAngle) - 11;
-  const markerLabelLeft = Math.min(size - 62, Math.max(2, markerX - 20));
-  const markerLabelTop = Math.min(size - 26, Math.max(2, markerY - 34));
-  const ovulationDay = Math.max(periodLength + 2, average - 14);
-  const phaseRanges: Record<ChartPhase, [number, number]> = {
-    menstrual: [1, Math.max(1, periodLength)],
-    follicular: [
-      Math.min(average, periodLength + 1),
-      Math.max(periodLength + 1, Math.min(average, ovulationDay - 2)),
-    ],
-    ovulatory: [
-      Math.max(1, ovulationDay - 1),
-      Math.min(average, ovulationDay + 1),
-    ],
-    luteal: [Math.min(average, ovulationDay + 2), average],
+  const markerOnRight = markerX > center;
+  const markerLabelLeft = markerOnRight
+    ? Math.min(size - 48, markerX + 18)
+    : Math.max(0, markerX - 46);
+  const markerLabelTop = Math.min(size - 18, Math.max(4, markerY + 2));
+
+  const phaseLabelLayout: Record<
+    ChartPhase,
+    { left: number; top: number; width: number; align: "left" | "center" | "right" }
+  > = {
+    menstrual: { left: 196, top: 42, width: 104, align: "left" },
+    follicular: { left: 226, top: 139, width: 88, align: "left" },
+    ovulatory: { left: 105, top: 286, width: 110, align: "center" },
+    luteal: { left: 6, top: 143, width: 92, align: "right" },
   };
 
   return (
@@ -279,19 +278,15 @@ function CycleChart({
                 height: segmentHeight,
                 borderRadius: segmentWidth / 2,
                 backgroundColor: phaseColors[phase],
-                opacity: activePhase === null || activePhase === phase ? 1 : 0.42,
+                opacity: activePhase === null || activePhase === phase ? 1 : 0.52,
                 transform: [{ rotate: `${angleDegrees}deg` }],
               }}
             />
           );
         })}
 
-        {(Object.keys(phaseRanges) as ChartPhase[]).map((phase) => {
-          const [start, end] = phaseRanges[phase];
-          const midDay = (start + end) / 2;
-          const angle = ((midDay - 0.5) / average) * Math.PI * 2 - Math.PI / 2;
-          const x = center + labelRadius * Math.cos(angle) - 42;
-          const y = center + labelRadius * Math.sin(angle) - 15;
+        {(Object.keys(phaseLabelLayout) as ChartPhase[]).map((phase) => {
+          const layout = phaseLabelLayout[phase];
           const selected = activePhase === phase;
           return (
             <View
@@ -299,25 +294,18 @@ function CycleChart({
               pointerEvents="none"
               style={{
                 position: "absolute",
-                left: Math.min(size - 84, Math.max(0, x)),
-                top: Math.min(size - 30, Math.max(0, y)),
-                width: 84,
-                minHeight: 30,
-                paddingHorizontal: 5,
-                paddingVertical: 4,
-                borderRadius: 10,
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: selected ? "rgba(255,255,255,0.78)" : "transparent",
+                left: layout.left,
+                top: layout.top,
+                width: layout.width,
               }}
             >
               <Copy
                 numberOfLines={2}
                 style={{
                   color: selected ? c.plum : c.muted,
-                  fontSize: 10,
-                  lineHeight: 12,
-                  textAlign: "center",
+                  fontSize: selected ? 11 : 10,
+                  lineHeight: 13,
+                  textAlign: layout.align,
                   fontWeight: selected ? "800" : "600",
                 }}
               >
@@ -400,25 +388,20 @@ function CycleChart({
                 ...shadows.float,
               }}
             />
-            <View
+            <Copy
               pointerEvents="none"
               style={{
                 position: "absolute",
                 left: markerLabelLeft,
                 top: markerLabelTop,
-                minWidth: 58,
-                backgroundColor: c.surface,
-                borderRadius: radius.pill,
-                paddingHorizontal: 9,
-                paddingVertical: 4,
-                alignItems: "center",
-                ...shadows.card,
+                color: c.plum,
+                fontSize: 10,
+                lineHeight: 13,
+                fontWeight: "800",
               }}
             >
-              <Copy style={{ color: c.plum, fontSize: 10, fontWeight: "800" }}>
-                {todayLabel}
-              </Copy>
-            </View>
+              {todayLabel}
+            </Copy>
           </>
         )}
       </View>
@@ -467,18 +450,6 @@ export default function Home() {
       : cycle.remaining <= 0
         ? h.t("periodEstimateToday")
         : h.t("periodEstimate", { count: cycle.remaining });
-  const ovulationDay = Math.max(cycle.periodLength + 2, cycle.average - 14);
-  const daysToOvulation = cycle.day ? ovulationDay - cycle.day : null;
-  const nextMilestoneLabel =
-    daysToOvulation !== null && daysToOvulation > 0
-      ? h.t("ovulatory")
-      : h.t("nextPeriod");
-  const nextMilestoneValue =
-    daysToOvulation !== null && daysToOvulation > 0
-      ? h.t("countDays", { count: daysToOvulation })
-      : cycle.remaining !== null
-        ? h.t("countDays", { count: Math.max(0, cycle.remaining) })
-        : h.t("unknown");
   const openLog = (mood?: Mood) => {
     h.setEditingDate(now);
     router.push(mood ? { pathname: "/check-in", params: { mood } } : "/check-in");
@@ -603,54 +574,7 @@ export default function Home() {
             }}
           />
 
-          <View
-            style={{
-              marginTop: 4,
-              marginHorizontal: 4,
-              minHeight: 54,
-              borderRadius: 18,
-              backgroundColor: "rgba(255,255,255,0.58)",
-              paddingHorizontal: 14,
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 10,
-            }}
-          >
-            <View
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 16,
-                backgroundColor: "rgba(91,42,74,0.08)",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Ionicons name="arrow-forward" size={16} color={c.plum} />
-            </View>
-            <View style={{ flex: 1, gap: 1 }}>
-              <Copy style={{ color: c.muted, fontSize: 10, fontWeight: "700" }}>
-                {h.t("estimate")}
-              </Copy>
-              <Copy style={{ color: c.plum, fontSize: 13, fontWeight: "800" }}>
-                {nextMilestoneLabel}
-              </Copy>
-            </View>
-            <View
-              style={{
-                borderRadius: radius.pill,
-                backgroundColor: c.surface,
-                paddingHorizontal: 10,
-                paddingVertical: 6,
-              }}
-            >
-              <Copy style={{ color: c.plum, fontSize: 11, fontWeight: "800" }}>
-                {nextMilestoneValue}
-              </Copy>
-            </View>
-          </View>
-
-          <View style={{ flexDirection: "row", gap: 9, marginTop: 10 }}>
+          <View style={{ flexDirection: "row", gap: 9, marginTop: 6 }}>
             <Pressable
               accessibilityRole="button"
               onPress={togglePeriod}
